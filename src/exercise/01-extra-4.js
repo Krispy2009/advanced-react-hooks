@@ -5,7 +5,7 @@ import * as React from 'react'
 function countReducer(state, action) {
   switch (action.type) {
     case 'INCREMENT':
-      return {count: state.count + 1}
+      return {count: state.count + action.step}
     default:
       throw new Error('Whoopsy')
   }
