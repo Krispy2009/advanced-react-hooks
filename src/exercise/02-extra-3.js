@@ -39,13 +39,15 @@ function PokemonInfo({pokemonName}) {
       if (!promise) {
         return
       }
-      dispatch({type: 'pending'})
       promise.then(
         data => {
+          console.log('all gud')
           dispatch({type: 'resolved', data})
         },
         error => {
-          dispatch({type: 'rejected', error})
+          if (error.name !== 'AbortError') {
+            dispatch({type: 'rejected', error})
+          }
         },
       )
     }, [])
@@ -59,7 +61,8 @@ function PokemonInfo({pokemonName}) {
     if (!pokemonName) {
       return
     }
-    const pokemonPromise = fetchPokemon(pokemonName)
+
+    const pokemonPromise = fetchPokemon(pokemonName, 1500, signal)
 
     run(pokemonPromise)
   }, [pokemonName, run])
@@ -101,6 +104,8 @@ function App() {
     </div>
   )
 }
+let controller = new AbortController()
+let signal = controller.signal
 
 function AppWithUnmountCheckbox() {
   const [mountApp, setMountApp] = React.useState(true)
@@ -110,7 +115,16 @@ function AppWithUnmountCheckbox() {
         <input
           type="checkbox"
           checked={mountApp}
-          onChange={e => setMountApp(e.target.checked)}
+          onChange={e => {
+            if (mountApp) {
+              console.log('will abort')
+              controller.abort()
+            } else {
+              controller = new AbortController()
+              signal = controller.signal
+            }
+            setMountApp(e.target.checked)
+          }}
         />{' '}
         Mount Component
       </label>
