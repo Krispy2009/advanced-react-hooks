@@ -34,23 +34,43 @@ function PokemonInfo({pokemonName}) {
       data: null,
       error: null,
     })
+    const myRef = React.useRef(false)
 
-    const run = React.useCallback(promise => {
-      if (!promise) {
-        return
+    // useEffect runs when component is mounted, and cleanup function runs when component is unmounted
+    React.useEffect(() => {
+      myRef.current = true
+      return () => {
+        myRef.current = false
       }
-      promise.then(
-        data => {
-          console.log('all gud')
-          dispatch({type: 'resolved', data})
-        },
-        error => {
-          if (error.name !== 'AbortError') {
-            dispatch({type: 'rejected', error})
-          }
-        },
-      )
+    })
+
+    const safeDispatch = React.useCallback((...args) => {
+      if (myRef.current) {
+        dispatch(...args)
+      }
     }, [])
+
+    const run = React.useCallback(
+      promise => {
+        console.log('in run')
+        if (!promise) {
+          return
+        }
+        safeDispatch({type: 'pending'})
+
+        promise.then(
+          data => {
+            safeDispatch({type: 'resolved', data})
+          },
+          error => {
+            safeDispatch({type: 'rejected', error})
+          },
+        )
+      },
+      [safeDispatch],
+    )
+
+    console.log('render')
 
     return {...state, run}
   }
@@ -61,9 +81,7 @@ function PokemonInfo({pokemonName}) {
     if (!pokemonName) {
       return
     }
-
-    const pokemonPromise = fetchPokemon(pokemonName, 1500, signal)
-
+    const pokemonPromise = fetchPokemon(pokemonName)
     run(pokemonPromise)
   }, [pokemonName, run])
 
@@ -104,8 +122,6 @@ function App() {
     </div>
   )
 }
-let controller = new AbortController()
-let signal = controller.signal
 
 function AppWithUnmountCheckbox() {
   const [mountApp, setMountApp] = React.useState(true)
@@ -115,16 +131,7 @@ function AppWithUnmountCheckbox() {
         <input
           type="checkbox"
           checked={mountApp}
-          onChange={e => {
-            if (mountApp) {
-              console.log('will abort')
-              controller.abort()
-            } else {
-              controller = new AbortController()
-              signal = controller.signal
-            }
-            setMountApp(e.target.checked)
-          }}
+          onChange={e => setMountApp(e.target.checked)}
         />{' '}
         Mount Component
       </label>

@@ -7,7 +7,7 @@ const formatDate = date =>
   ).padStart(2, '0')}.${String(date.getMilliseconds()).padStart(3, '0')}`
 
 // the delay argument is for faking things out a bit
-function fetchPokemon(name, delay = 1500, signal = null) {
+function fetchPokemon(name, delay = 1500) {
   const pokemonQuery = `
     query PokemonInfo($name: String) {
       pokemon(name: $name) {
@@ -38,7 +38,6 @@ function fetchPokemon(name, delay = 1500, signal = null) {
         query: pokemonQuery,
         variables: {name: name.toLowerCase()},
       }),
-      signal: signal,
     })
     .then(async response => {
       const {data} = await response.json()
@@ -57,14 +56,6 @@ function fetchPokemon(name, delay = 1500, signal = null) {
         }
         return Promise.reject(error)
       }
-    })
-    .catch(e => {
-      if (e.name === 'AbortError') {
-        console.log('aborted')
-      } else {
-        console.error('oh no! => ', e)
-      }
-      return Promise.reject(e)
     })
 }
 
